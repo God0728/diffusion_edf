@@ -171,11 +171,11 @@ class ScoreModelHead(torch.nn.Module):
             query_transformed = set_featured_points_attribute(points=query_transformed, 
                                                                               f=self.query_time_mlp(time_enc).unsqueeze(-2).expand(nT, nQ, self.time_emb_dim),  # (nT, time_emb_D) -> # (nT, nQ, time_emb_D)
                                                                               w=None)    # (nT, nQ, 3), (nT, nQ, time_emb), (nT, nQ,), None
-        else:
+        else:#设置f为垃圾值
             query_transformed = set_featured_points_attribute(points=query_transformed, f=torch.empty_like(query_transformed.f), w=None)   # (nT, nQ, 3), (nT, nQ, -), (nT, nQ,), None
 
         query_transformed = flatten_featured_points(query_transformed)                                         # (nT*nQ, 3), (nT*nQ, time_emb), (nT*nQ,), None
-        if self.edge_time_encoding:
+        if self.edge_time_encoding:#使用了边时间编码
             query_transformed = self.key_tensor_field(query_points = query_transformed, 
                                                                       input_points_multiscale = key_pcd_multiscale,
                                                                       context_emb = time_embs_multiscale)                      # (nT*nQ, 3), (nT*nQ, F), (nT*nQ,), (nT*nQ,)

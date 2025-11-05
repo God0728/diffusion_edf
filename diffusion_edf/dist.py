@@ -327,7 +327,7 @@ def diffuse_isotropic_se3_batched(T0: torch.Tensor,
             std = std.type(dtype=torch.float64)
         if isinstance(x_ref, torch.Tensor):
             x_ref = x_ref.type(dtype=torch.float64) 
-
+    #采样噪声增量
     delta_T = sample_isotropic_se3_gaussian(eps=eps, std=std, N=len(x_ref) * len(T0), dtype=T0.dtype, device=T0.device)     # shape: (nXref*nT, 7)
     ang_score_ref, lin_score_ref = se3_isotropic_gaussian_score(T=delta_T, eps=eps, std=std)                   # shape: (nXref*nT, 3), (nXref*nT, 3)
     if x_ref is not None:

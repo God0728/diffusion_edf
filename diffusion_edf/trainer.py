@@ -285,7 +285,7 @@ class DiffusionEdfTrainer():
         if self.diffusion_xref_bbox is not None:
             if grasp_points.x.dtype != self.diffusion_xref_bbox.dtype or grasp_points.x.device != self.diffusion_xref_bbox.device:
                 self.diffusion_xref_bbox = self.diffusion_xref_bbox.to(dtype=grasp_points.x.dtype, device=grasp_points.x.device)
-            
+        #采样    
         x_ref, n_neighbors = train_utils.transform_and_sample_reference_points(
             T_target=T_init,
             scene_points=scene_points,
@@ -294,6 +294,7 @@ class DiffusionEdfTrainer():
             n_samples_x_ref=n_samples_x_ref,
             xref_bbox=xref_bbox
         )
+        #添加噪声
         T_diffused, delta_T, time_in, (gt_ang_score, gt_lin_score), (gt_ang_score_ref, gt_lin_score_ref) = train_utils.diffuse_T_target(
             T_target=T_init, 
             x_ref=x_ref, 

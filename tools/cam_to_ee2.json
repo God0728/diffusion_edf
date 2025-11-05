@@ -1,0 +1,16 @@
+{
+    "position": [
+        -0.090514,
+        -0.087819,
+        0.03838
+    ],
+    "quaternion": [
+        -0.043008,
+        0.001684,
+        -0.293632,
+        0.954949
+    ],
+    "description": "Camera to end-effector transform from hand-eye calibration",
+    "calibration_method": "hand_eye_calibration",
+    "timestamp": "2024-10-28"
+}

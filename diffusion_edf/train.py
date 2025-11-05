@@ -55,7 +55,8 @@ def train_score_model(configs_root_dir: str,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Evaluate EDF agents for pick-and-place task')
     parser.add_argument('--configs-root-dir', type=str,
-                        help='')
+                        help='',
+                        default='configs/panda_mug/pick_lowres')
     parser.add_argument('--train-configs-file', type=str, default='train_configs.yaml',
                         help='')
     parser.add_argument('--task-configs-file', type=str, default='task_configs.yaml',

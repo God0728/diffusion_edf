@@ -230,14 +230,14 @@ class MultiscaleTensorField(torch.nn.Module):
                 edge_scalars = edge_scalars.type(edge_scalars_pre_linear[0].weight.dtype) # To avoid JIT type bug
             else:
                 pass                                  # (nEdge, Emb = lEmb)
-            
+            #mlp预处理
             edge_scalars = edge_scalars_pre_linear(edge_scalars)                          # (nEdge, Emb)
-            ### Flatten graph ###
+            ### Flatten graph ###  多尺度偏移 把多个尺度的场景点展平成一个大列表
             graph_edge = set_graph_edge_attribute(graph_edge=graph_edge, 
                                                   edge_scalars=edge_scalars, 
                                                   edge_src = graph_edge.edge_src + n_total_points)
             n_total_points = n_total_points + len(input_points.x)
-            if n == 0:
+            if n == 0:#拼接
                 assert graph_edges_flattend is None and input_points_flattend is None
                 graph_edges_flattend = graph_edge
                 input_points_flattend = input_points

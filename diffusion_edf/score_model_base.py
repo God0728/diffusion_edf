@@ -40,7 +40,7 @@ class ScoreModelBase(torch.nn.Module):
     @torch.jit.export
     def get_train_loss(self, Ts: torch.Tensor, 
                        time: torch.Tensor, 
-                       key_pcd: FeaturedPoints, 
+                       key_pcd: FeaturedPoints, #scene
                        query_pcd: FeaturedPoints, 
                        target_ang_score: torch.Tensor,
                        target_lin_score: torch.Tensor,
@@ -52,15 +52,15 @@ class ScoreModelBase(torch.nn.Module):
         assert target_lin_score.ndim == 2 and target_lin_score.shape[-1] == 3, f"{target_lin_score.shape}"
         assert time.ndim == 1 and target_ang_score.shape[-1] == 3, f"{target_ang_score.shape}"
         assert len(time) == len(target_ang_score) == len(target_lin_score)
-
+        #1.特征提取
         key_pcd_multiscale: List[FeaturedPoints] = self.get_key_pcd_multiscale(key_pcd)
         query_pcd: FeaturedPoints = self.get_query_pcd(query_pcd)
-
+        #2.得分预测
         ang_score, lin_score = self.score_head(Ts = Ts, 
                                                key_pcd_multiscale = key_pcd_multiscale, 
                                                query_pcd = query_pcd,
                                                time = time)
-        
+        #3.计算损失
         target_ang_score = target_ang_score * torch.sqrt(time[..., None]) * self.ang_mult
         target_lin_score = target_lin_score * torch.sqrt(time[..., None]) * self.lin_mult
         ang_score_diff = target_ang_score - ang_score

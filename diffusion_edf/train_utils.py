@@ -58,17 +58,22 @@ def get_collate_fn(task, proc_fn):
     return collate_fn
 
 def sample_reference_points(src_points: torch.Tensor, dst_points: torch.Tensor, r: float, n_samples: int = 1) -> Tuple[torch.Tensor, torch.Tensor]:
+    print(src_points.shape, dst_points.shape, "0000")
     edge_dst, edge_src = radius(x=src_points, y=dst_points, r=r)
+    print(edge_dst.shape, edge_src.shape,"1111")
     n_points = len(dst_points)
+    print(n_points, "抓取点云数量")
     n_neighbor = scatter_sum(src=torch.ones_like(edge_dst), index=edge_dst, dim_size=n_points)
     total_count = n_neighbor.sum()
     if total_count <= 0:
         raise ValueError("There is no connected edges. Increase the contact radius.")
     p_choice = n_neighbor / total_count
-
+    #在grasp_pcd中进行采样
     sampled_idx = torch.multinomial(p_choice, num_samples=n_samples)
     return dst_points.index_select(0, sampled_idx), n_neighbor
 
+#   所以匹配只是查找同一坐标系（夹爪）下的距离在阈值范围内的点 
+#   只使用了距离几何信息 并没有在匹配过程中引入任何点云特征信息 不设计语义特征 jimmy
 @beartype
 def transform_and_sample_reference_points(T_target: torch.Tensor,
                                           scene_points: FeaturedPoints,
@@ -80,9 +85,13 @@ def transform_and_sample_reference_points(T_target: torch.Tensor,
     if len(T_target) != 1:
         raise NotImplementedError
     dst_points = grasp_points.x
+    print(dst_points.shape, "1111")
     if xref_bbox is not None:
         inrange_idx = ((dst_points >= xref_bbox[:,0]) * (dst_points <= xref_bbox[:,1])).all(dim=-1).nonzero().squeeze()
         dst_points = dst_points.index_select(index=inrange_idx, dim=0)
+    
+    print(scene_points.x.shape, "2222")
+    print(scene_points.f.shape, "3333")
     
     x_ref, n_neighbors = sample_reference_points(
         src_points = PointCloud(points=scene_points.x, colors=scene_points.f).transformed(
@@ -92,7 +101,7 @@ def transform_and_sample_reference_points(T_target: torch.Tensor,
         r=float(contact_radius), 
         n_samples=n_samples_x_ref
     )
-    return x_ref, n_neighbors
+    return x_ref, n_neighbors#参考点坐标，参考点邻居数量
 
 @beartype
 def random_time(min_time: Union[float, int], 

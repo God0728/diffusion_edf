@@ -1,0 +1,36 @@
+device: 'cuda'
+model_kwargs:
+  pick_models_kwargs:
+    - configs_root_dir: 'configs/rebar_grasping/pick_lowres'
+      train_configs_file: 'train_configs.yaml'
+      task_configs_file: 'task_configs.yaml'
+      checkpoint_dir: 'checkpoints/real_rebar_grasping/Pick_LowRes_300.pt'  
+      n_warmups: 10
+    - configs_root_dir: 'configs/rebar_grasping/pick_highres'
+      train_configs_file: 'train_configs.yaml'
+      task_configs_file: 'task_configs.yaml'
+      checkpoint_dir: 'checkpoints/real_rebar_grasping/Pick_HiRes_300.pt'  
+      n_warmups: 10
+  pick_critic_kwargs:
+    configs_root_dir: 'configs/rebar_grasping/pick_ebm'
+    train_configs_file: 'train_configs.yaml'
+    task_configs_file: 'task_configs.yaml'
+    checkpoint_dir: 'checkpoints/real_rebar_grasping/Pick_EBM_300.pt'
+    n_warmups: 10
+  place_models_kwargs:
+    - configs_root_dir: 'configs/rebar_grasping/place_lowres'
+      train_configs_file: 'train_configs.yaml'
+      task_configs_file: 'task_configs.yaml'
+      checkpoint_dir: 'checkpoints/real_rebar_grasping/Place_LowRes_300.pt'
+      n_warmups: 10
+    - configs_root_dir: 'configs/rebar_grasping/place_highres'
+      train_configs_file: 'train_configs.yaml'
+      task_configs_file: 'task_configs.yaml'
+      checkpoint_dir: 'checkpoints/real_rebar_grasping/Place_HiRes_300.pt'
+      n_warmups: 10
+  place_critic_kwargs: 
+    configs_root_dir: 'configs/rebar_grasping/place_ebm'
+    train_configs_file: 'train_configs.yaml'
+    task_configs_file: 'task_configs.yaml'
+    checkpoint_dir: 'checkpoints/real_rebar_grasping/Place_EBM_300.pt'
+    n_warmups: 10

@@ -13,7 +13,7 @@ model_kwargs:
       num_heads: 4
       fc_neurons: [-1, 128, 64]    # fc_neurons[0] must be equal to time_emb_dim and length_emb_dim
       length_emb_dim: 64          
-      r_cluster_multiscale:        # In centimeters
+      r_cluster_multiscale:        # In centimeters 多尺度聚类半径
         - 5.                       # Set higher value (like 6.) if unstable.
         - 10.
         - 20.
