@@ -1,4 +1,6 @@
 import rtde_receive
+import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 class RobotInterface:
     def __init__(self, robot_ip="192.168.56.101"):  
@@ -20,7 +22,7 @@ class RobotInterface:
         rotvec = tcp_pose[3:]
         quaternion = R.from_rotvec(rotvec).as_quat()
         
-        rtde.disconnect()
+        self.rtde.disconnect()
         
         print(f"   ✓ 获取当前末端姿态: {position}")
         return list(position), list(quaternion)
@@ -35,8 +37,8 @@ class RobotInterface:
         print(f"成功连接机械臂: {self.robot_ip}")
         
         # 获取关节角度
-        joint_angles = rtde.getActualQ() 
-        rtde.disconnect()
+        joint_angles = self.rtde.getActualQ() 
+        self.rtde.disconnect()
         
         print(f"关节角度 (弧度): {joint_angles}")
         return list(joint_angles)
