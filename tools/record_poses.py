@@ -82,7 +82,7 @@ class PoseRecorder:
         
         # 写文件
         torch.save(torch.tensor(pose.reshape(1, 7), dtype=torch.float32), 
-                   pose_dir / "pose.pt")
+                   pose_dir / "poses.pt")
         self._make_metadata(demo_dir / "metadata.yaml", "DemoSequence")
         self._make_metadata(pose_dir / "metadata.yaml", "SE3", 
                            {'unit_length': '1 [m]'})

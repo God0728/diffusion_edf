@@ -4,18 +4,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 读取 .pt 文件
-path = "/home/hkcrc/diffusion_edfs/diffusion_edf/tools/"
-points = torch.load(path+"points.pt").cpu().numpy()
-colors = torch.load(path+"colors.pt").cpu().numpy()
+path = "/home/hkcrc/diffusion_edfs/diffusion_edf/demo/panda_bottle_on_shelf/data/demo_0/step_0/grasp_pcd/"
+
+# 兼容加载：可能是 tensor 或 ndarray
+def load_pt(file_path):
+    data = torch.load(file_path, weights_only=False)
+    if isinstance(data, torch.Tensor):
+        return data.cpu().numpy()
+    return np.asarray(data)
+
+points = load_pt(path + "points.pt")
+colors = load_pt(path + "colors.pt")
 
 # 基本信息
 print("=== 基本信息 ===")
-print("Points:", points)
-print("Points shape:", points.shape if hasattr(points, 'shape') else len(points))
+print("Points shape:", points.shape)
 print("Points type:", type(points))
-print("Color:", colors)
-print("Color shape:", colors.shape if hasattr(colors, 'shape') else len(colors))
+print("Points dtype:", points.dtype)
+print("Color shape:", colors.shape)
 print("Color type:", type(colors))
+print("Color dtype:", colors.dtype)
 
 # 详细的坐标分布分析
 print("\n=== 坐标分布分析 ===")

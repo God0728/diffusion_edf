@@ -18,3 +18,5 @@
   type: "DemoSequence"
 - path: "data/demo_7"
   type: "DemoSequence"
+- path: "data/demo_10"
+  type: "DemoSequence"
