@@ -46,16 +46,16 @@ class GraspSequencePipeline:
         session_root: str = "/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/run_sessions",
         device: str = "134322070890",
         scale: int = 1,
-        gripper_bbox: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]] = (
-            (-0.3, 0.3),  # x
-            (-0.3, 0.3),  # y
-            (-0.5, 0.5) # z
-        ),
         # gripper_bbox: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]] = (
-        #     (-0.1, 0.1),  # x
-        #     (-0.1, 0.1),  # y
-        #     (-0.05, 0.15) # z
+        #     (-0.3, 0.3),  # x
+        #     (-0.3, 0.3),  # y
+        #     (-0.5, 0.5) # z
         # ),
+        gripper_bbox: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]] = (
+            (-0.05, 0.05),  # x
+            (-0.05, 0.05),  # y
+            (-0.05, 0.2) # z
+        ),
     ):
         logger.info("========== Init GraspSequencePipeline ==========")
 
@@ -115,7 +115,7 @@ class GraspSequencePipeline:
         if self.calibrator is None:
             logger.info("[Camera] Starting camera...")
             self.calibrator = RealSenseCalibrator(self.device)
-            time.sleep(1.0)  # 预热
+            time.sleep(1.0)  
 
     def _stop_camera(self) -> None:
         if self.calibrator is not None:
@@ -215,13 +215,16 @@ class GraspSequencePipeline:
         logger.info(f"[Step 6] PLY2: {ply2_path}")
         
         pos_cam, quat_cam = TransformManager.load_json(str(self.cam2base_path))
+        quat_cam = [quat_cam[3], quat_cam[0], quat_cam[1], quat_cam[2]]
         T_cam_base = SE3(torch.tensor([*quat_cam, *pos_cam], dtype=torch.float32))    
 
         pos, quat = self.pose0, self.quat0
+        quat = [quat[3], quat[0], quat[1], quat[2]]
         T_base_ee1 = SE3(torch.tensor([*quat, *pos], dtype=torch.float32))
         T_cam_ee1 = SE3.multiply(T_base_ee1.inv(), T_cam_base)
 
         pos, quat = self.pose1, self.quat1
+        quat = [quat[3], quat[0], quat[1], quat[2]]
         T_base_ee2 = SE3(torch.tensor([*quat, *pos], dtype=torch.float32))
         T_cam_ee2 = SE3.multiply( T_base_ee2.inv(), T_cam_base)
        
@@ -273,7 +276,7 @@ def main():
     parser.add_argument(
         "--joints",
         type=str,
-        default="189.20,-61.79,-86.89,-128.12,91.40,317.29",
+        default="190.03,-74.53,-87.62,-106.24,94.64,306.18",
     )
     parser.add_argument(
         "--rotate_deg",

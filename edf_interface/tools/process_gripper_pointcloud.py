@@ -13,17 +13,17 @@ from edf_interface.modules import TransformManager as TM
 def concat(pcd1: PointCloud, pcd2: PointCloud) -> PointCloud:
 
     # 构造绕Z轴180度旋转的变换
-    # 四元数 [0, 0, sin(90°), cos(90°)] = [0, 0, 1, 0] 表示绕Z轴180度
-    T_flip = SE3(torch.tensor([0., 0., 1., 0., 0., 0., 0.], dtype=torch.float32))
+    # 四元数 [0, 0, sin(90°), cos(90°)] = [0, 0, 0, 1] 表示绕Z轴180度
+    # T_flip = SE3(torch.tensor([0., 0., 0., 1., 0., 0., 0.], dtype=torch.float32))
     
-    pcd2_aligned = pcd2.transformed(T_flip, squeeze=True)
+    # # 将 pcd2 旋转回与 pcd1 对齐
+    # pcd2_flipped = pcd2.transformed(T_flip, squeeze=True)
     
-    merged = PointCloud(
-        points=torch.cat([pcd1.points, pcd2_aligned.points], dim=0),
-        colors=torch.cat([pcd1.colors, pcd2_aligned.colors], dim=0) if pcd1.colors is not None else None
-    )
+    # 拼接点云
+    points = torch.cat([pcd1.points, pcd2.points], dim=0)
+    colors = torch.cat([pcd1.colors, pcd2.colors], dim=0)
     
-    return downsample(merged, voxel_size=0.001) 
+    return PointCloud(points=points, colors=colors)
 
 
 def process_gripper_pointcloud(

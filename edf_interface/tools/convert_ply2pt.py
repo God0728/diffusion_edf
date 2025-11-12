@@ -17,9 +17,9 @@ def main():
     # 1) 输入路径与变换定义
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", choices=['ee', 'baselink'], required=True,)
-    parser.add_argument("--input",  default="/home/hkcrc/DCIM/rs1111_2/cloud.ply")
-    parser.add_argument("--output", default="/home/hkcrc/diffusion_edfs/diffusion_edf/dataset/1111_2/")
-    parser.add_argument("--cam-to-ee", default="configs/scene_cam.json")
+    parser.add_argument("--input",  default="/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/run_sessions/scene/20251112_154653/pcd/pose/A_1762933625131/cloud.ply")
+    parser.add_argument("--output", default="../test/")
+    parser.add_argument("--cam-to-ee", default="/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/configs/cam_to_ee.json")
     args = parser.parse_args()
 
 
