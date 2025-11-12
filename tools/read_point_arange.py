@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 读取 .pt 文件
-path = "/home/hkcrc/diffusion_edfs/diffusion_edf/demo/panda_bottle_on_shelf/data/demo_0/step_0/grasp_pcd/"
+path = "/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/run_sessions/20251112_143832/fused/"
 
 # 兼容加载：可能是 tensor 或 ndarray
 def load_pt(file_path):
