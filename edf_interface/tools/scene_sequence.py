@@ -158,7 +158,6 @@ class SceneSequencePipeline:
         ply_path = ply_files_pose[0]
         logger.info(f"[Step 4] Input point cloud: {ply_path}")
 
-        # 2. 加载点云
         pcd = o3d.io.read_point_cloud(str(ply_path))
         pcd = PointCloud.from_o3d(pcd)
         logger.info(f"[Step 4] Point cloud size: {pcd.points.shape[0]}")
