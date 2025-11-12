@@ -145,7 +145,6 @@ class SceneSequencePipeline:
         logger.success(f"[Step 3] Point clouds generated:\n  - {self.paths.pcd_pose_dir}")
 
     def step4_trans_pointclouds(self) -> Path:
-        """把cam坐标系下的点云转换到基座坐标系 (baselink模式)"""
         logger.info("[Step 4] Transforming point clouds to base frame")
         
         ply_files_pose = list(self.paths.pcd_pose_dir.rglob("*.ply"))
@@ -164,44 +163,35 @@ class SceneSequencePipeline:
         pcd = PointCloud.from_o3d(pcd)
         logger.info(f"[Step 4] Point cloud size: {pcd.points.shape[0]}")
         
-        # 3. 使用与 convert_ply2pt.py 完全相同的方法
         import numpy as np
         from edf_interface.modules.pointcloud import PointCloudHandler as P
         
-        # 加载点云（使用 PointCloudHandler）
         points, colors = P.load(ply_path)
         logger.info(f"[Step 4] Loaded with PointCloudHandler: {points.shape[0]} points")
         
-        # 加载相机到末端的标定
         position, quaternion = TransformManager.load_json(str(self.cam2ee_path))
         T_cam_ee = TransformManager.pose_to_matrix(position, quaternion)
         logger.info(f"[Step 4] T_cam_ee loaded: pos={position}, quat={quaternion}")
         
-        # 获取基座到末端的变换
         T_base_ee = TransformManager.pose_to_matrix(self.pose, self.quat)
         logger.info(f"[Step 4] T_base_ee computed: pos={self.pose}, quat={self.quat}")
         
-        # 变换链：点云(相机系) → 末端系 → 基座系
         T = T_base_ee @ T_cam_ee
         logger.info(f"[Step 4] T_cam_base = T_base_ee @ T_cam_ee")
         
-        # 应用变换
         points_tf = TransformManager.apply_points(points.astype(np.float32), T)
         logger.info(f"[Step 4] Point cloud transformed to base frame")
         
-        # 5. 保存转换后的点云
         output_dir = self.paths.pcd_pose_dir / "base_raw"
         output_dir.mkdir(parents=True, exist_ok=True)
         P.save(points_tf, output_dir, colors)
         logger.success(f"[Step 4] Saved to: {output_dir}")
         
-        # 6. 可视化（可选）
         try:
             P.visualize((points_tf, colors), "Scene PointCloud (Base Frame)")
         except Exception as e:
             logger.warning(f"[Step 4] Visualization skipped (libGL issue): {e}")
         
-        # 查找保存的文件
         saved_files = list(output_dir.glob("*.pt"))
         if not saved_files:
             saved_files = list(output_dir.glob("*.ply"))
