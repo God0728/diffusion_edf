@@ -51,13 +51,13 @@ def process_gripper_pointcloud(
     print(f"  裁剪后 PLY2: {gripper2.points.shape[0]} 点")
     
     gripper_ee = concat(gripper1, gripper2)
+    gripper_ee = PointCloud.remove_outliers(gripper_ee, nb_neighbors=20, std_ratio=2.0)
     print(f"  拼接后: {gripper_ee.points.shape[0]} 点")
     
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     gripper_ee.save(output_path)
-    print(f"  ✓ 已保存到: {output_path}")
-        
+    print(f"  ✓ 已保存到: {output_path}")    
 
     fig = gripper_ee.show(point_size=2.0, name="Gripper PointCloud")
     fig.show()

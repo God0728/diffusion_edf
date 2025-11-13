@@ -12,7 +12,7 @@ class PoseRecorder:
     
     def __init__(self, dataset_name, robot_ip="192.168.56.101"):
         # 路径
-        base = Path(__file__).parent.parent / "demo" / dataset_name
+        base = Path("/home/hkcrc/diffusion_edfs/diffusion_edf/demo") / dataset_name
         self.data_dir = base / "data"
         self.state_file = base / ".state.json"
         
@@ -65,7 +65,8 @@ class PoseRecorder:
         
         # 获取pose
         pos, quat = self.robot.get_current_pose()
-        pose = np.concatenate([quat, pos])  # [qx,qy,qz,qw, x,y,z]
+        quat = [quat[3], quat[0], quat[1], quat[2]]
+        pose = np.concatenate([quat, pos])  # [qw,qx,qy,qz, x,y,z]
         
         print(f"位置: {pos}")
         print(f"四元数: {quat}")
@@ -107,7 +108,7 @@ class PoseRecorder:
 def main():
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default="rebar_grasping1110")
+    parser.add_argument("--dataset", default="rebar_grasping1113")
     parser.add_argument("--robot-ip", default="192.168.56.101")
     args = parser.parse_args()
     

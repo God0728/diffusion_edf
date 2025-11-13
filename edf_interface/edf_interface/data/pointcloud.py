@@ -15,7 +15,7 @@ magma_cmap = matplotlib.cm.get_cmap('magma')
 viridis_cmap = matplotlib.cm.get_cmap('viridis')
 
 import torch
-
+import open3d as o3d
 
 from .base import DataAbstractBase, Action, Observation
 from .se3 import SE3
@@ -250,7 +250,7 @@ class PointCloud(Observation):
              bg_color = None):
         return PointCloud.show_pcd(pcd=self, point_size=point_size, name=name, opacity=opacity, colors=colors, custom_data=custom_data, width=width, height=height, bg_color=bg_color)
     
-
+    @staticmethod
     def crop_pointcloud_bbox(pcd: PointCloud, bbox: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]]) -> PointCloud:
 
         points = pcd.points
@@ -269,7 +269,22 @@ class PointCloud(Observation):
             colors=pcd.colors[mask] if pcd.colors is not None else None
         )
 
+    @staticmethod        
+    def remove_outliers(pcd: PointCloud, nb_neighbors: int = 20, std_ratio: float = 2.0) -> PointCloud:
+        """使用统计方法去除离群点"""
+        if pcd.is_empty:
+            return pcd
         
+        pcd_o3d = o3d.geometry.PointCloud()
+        pcd_o3d.points = o3d.utility.Vector3dVector(pcd.points.cpu().numpy())
+        pcd_o3d.colors = o3d.utility.Vector3dVector(pcd.colors.cpu().numpy())
+        
+        pcd_filtered, ind = pcd_o3d.remove_statistical_outlier(
+            nb_neighbors=nb_neighbors,
+            std_ratio=std_ratio
+        )
+        
+        return PointCloud.from_o3d(pcd_filtered)
 
         
         

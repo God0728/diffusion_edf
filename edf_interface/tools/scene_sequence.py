@@ -16,8 +16,8 @@ from edf_interface.modules.robot import RobotInterface
 from edf_interface.modules.camera import RealSenseCalibrator
 from edf_interface.modules.transform import TransformManager
 from edf_interface.data import SE3
-
-
+from edf_interface.data.base import *
+from edf_interface.data.preprocess import downsample
 # --- Stereo PCD  ---
 stereo_tools_path = Path("/home/hkcrc/handeye")
 sys.path.insert(0, str(stereo_tools_path))
@@ -38,15 +38,15 @@ class SceneSequencePipeline:
     def __init__(
         self,
         target_joint_deg: List[float],
-        camera_model_path: str = "/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/configs/realsense_camera_model.json",
-        cam2ee_path: str = "/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/configs/cam_to_ee.json",       
-        session_root: str = "/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/run_sessions/scene",
-        device: str = "153122076446",
+        camera_model_path: str ,
+        cam2ee_path: str ,       
+        session_root: str ,
+        device: str ,
         scale: int = 1,
         gripper_bbox: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]] = (
-            (-0.6, 0.6),  # x
-            (-0.6, 0.6),  # y
-            (-0.2, 0.6) # z
+            (-0.5, 0.6),  # x
+            (0.25, 0.8),  # y
+            (-0.1, 0.6) # z
         ),
 
     ):
@@ -83,7 +83,7 @@ class SceneSequencePipeline:
         paths = SessionPaths(
             session_dir=session_dir,
             raw_pose_dir=session_dir / "raw" / "pose",
-            pcd_pose_dir=session_dir / "pcd" / "pose",
+            pcd_pose_dir=session_dir / "scene_pcd",
         )
 
         for d in [
@@ -109,7 +109,7 @@ class SceneSequencePipeline:
     def step1_move_to_target(self) -> None:
         logger.info("[Step 1] Moving robot to target joint angles")
         self.robot.move_to_joint_rad(joint_rad=self.target_joint_rad)
-        time.sleep(10.0)
+        time.sleep(20.0)
         self.pose, self.quat = self.robot.get_current_pose()
         logger.success("[Step 1] Move completed")
 
@@ -138,69 +138,55 @@ class SceneSequencePipeline:
         generate_pcd_dir(
             raw_dir=str(self.paths.raw_pose_dir),
             camera_model_path=str(self.camera_model_path),
-            output_dir=str(self.paths.pcd_pose_dir),
+            output_dir=str(self.paths.raw_pose_dir),
             scale=self.scale,
         )
         
-        logger.success(f"[Step 3] Point clouds generated:\n  - {self.paths.pcd_pose_dir}")
+        logger.success(f"[Step 3] Point clouds generated:\n  - {self.paths.raw_pose_dir}")
 
     def step4_trans_pointclouds(self) -> Path:
-        logger.info("[Step 4] Transforming point clouds to base frame")
         
-        ply_files_pose = list(self.paths.pcd_pose_dir.rglob("*.ply"))
+        ply_files_pose = list(self.paths.raw_pose_dir.rglob("*.ply"))
         
-        if not ply_files_pose:
-            logger.warning(f"[Step 4] No point cloud files found")
-            empty_path = self.paths.pcd_pose_dir / "empty.ply"
-            empty_path.touch()
-            return empty_path
         
         ply_path = ply_files_pose[0]
-        logger.info(f"[Step 4] Input point cloud: {ply_path}")
 
-        pcd = o3d.io.read_point_cloud(str(ply_path))
-        pcd = PointCloud.from_o3d(pcd)
-        logger.info(f"[Step 4] Point cloud size: {pcd.points.shape[0]}")
-        
         import numpy as np
-        from edf_interface.modules.pointcloud import PointCloudHandler as P
-        
-        points, colors = P.load(ply_path)
-        logger.info(f"[Step 4] Loaded with PointCloudHandler: {points.shape[0]} points")
+        pcd_o3d = o3d.io.read_point_cloud(str(ply_path))
+        pcd = PointCloud.from_o3d(pcd_o3d)
+        logger.info(f"[Step 4] Loaded: {pcd.points.shape[0]} points")
         
         position, quaternion = TransformManager.load_json(str(self.cam2ee_path))
         T_cam_ee = TransformManager.pose_to_matrix(position, quaternion)
-        logger.info(f"[Step 4] T_cam_ee loaded: pos={position}, quat={quaternion}")
         
         T_base_ee = TransformManager.pose_to_matrix(self.pose, self.quat)
-        logger.info(f"[Step 4] T_base_ee computed: pos={self.pose}, quat={self.quat}")
         
         T = T_base_ee @ T_cam_ee
-        logger.info(f"[Step 4] T_cam_base = T_base_ee @ T_cam_ee")
         
-        points_tf = TransformManager.apply_points(points.astype(np.float32), T)
-        logger.info(f"[Step 4] Point cloud transformed to base frame")
+        points_np = pcd.points.cpu().numpy()
+        points_tf = TransformManager.apply_points(points_np.astype(np.float32), T)
         
-        output_dir = self.paths.pcd_pose_dir / "base_raw"
+        points_tensor = torch.from_numpy(points_tf).float()
+        pcd_transformed = PointCloud(points=points_tensor, colors=pcd.colors)
+        pcd_transformed = PointCloud.crop_pointcloud_bbox(pcd_transformed, bbox=self.gripper_bbox)
+        pcd_transformed = PointCloud.remove_outliers(pcd_transformed, nb_neighbors=20, std_ratio=2.0)    
+        output_dir = self.paths.pcd_pose_dir 
         output_dir.mkdir(parents=True, exist_ok=True)
-        P.save(points_tf, output_dir, colors)
+        pcd_transformed.save(str(output_dir))
         logger.success(f"[Step 4] Saved to: {output_dir}")
         
         try:
-            P.visualize((points_tf, colors), "Scene PointCloud (Base Frame)")
+            pcd_vis = downsample(pcd_transformed, voxel_size=0.005)
+            fig = pcd_vis.show(point_size=2.0, name="Scene PointCloud (Base Frame)")
+            logger.info(f"  - Figure type: {type(fig)}")
+            logger.info(f"  - Figure data length: {len(fig.data) if hasattr(fig, 'data') else 'N/A'}")
+            
+            fig.show()
         except Exception as e:
-            logger.warning(f"[Step 4] Visualization skipped (libGL issue): {e}")
+            logger.warning(f"[Step 4] Visualization skipped: {e}")
         
-        saved_files = list(output_dir.glob("*.pt"))
-        if not saved_files:
-            saved_files = list(output_dir.glob("*.ply"))
-        
-        if saved_files:
-            output_path = saved_files[0]
-        else:
-            output_path = output_dir / "pcd.pt"
-        
-        return output_path
+
+        return output_dir
 
     def run(self) -> None:
         try:
@@ -230,7 +216,7 @@ def main():
     parser.add_argument(
         "--joints",
         type=str,
-        default="181.20,-17.35,-50.57,-157.89,65.57, 63.07",
+        default="189.20,-21.22,-48.39,-157.33,58.46, 241.34",
     )
     parser.add_argument(
         "--camera_model",

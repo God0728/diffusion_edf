@@ -1,13 +1,13 @@
 device: 'cuda:0'
 
 trainset:
-  dataset_dir: 'demo/rebar_grasping'
+  dataset_dir: 'demo/rebar_grasping1113'
   annotation_file: 'data.yaml'
   n_batches: 1
   shuffle: True
 
 testset:
-  dataset_dir: 'demo/rebar_grasping'
+  dataset_dir: 'demo/rebar_grasping1113'
   annotation_file: 'data.yaml'
   n_batches: 1
   shuffle: False

@@ -4,9 +4,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 读取 .pt 文件
-path = "/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/run_sessions/20251112_174309/fused/"
+path = "/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/tools/output/"
 
-# 兼容加载：可能是 tensor 或 ndarray
 def load_pt(file_path):
     data = torch.load(file_path, weights_only=False)
     if isinstance(data, torch.Tensor):

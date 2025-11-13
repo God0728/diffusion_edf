@@ -1,0 +1,10 @@
+{
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/edf_interface/tools",
+        "/home/hkcrc/handeye"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/edf_interface/tools",
+        "/home/hkcrc/handeye"
+    ]
+}

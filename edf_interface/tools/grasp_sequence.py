@@ -13,10 +13,9 @@ from loguru import logger
 
 from edf_interface.modules.robot import RobotInterface
 from edf_interface.modules.camera import RealSenseCalibrator
-from process_gripper_pointcloud import *
+from process_gripper_pointcloud import process_gripper_pointcloud
 from edf_interface.modules.transform import TransformManager
 from edf_interface.data import SE3
-
 
 # --- Stereo PCD  ---
 stereo_tools_path = Path("/home/hkcrc/handeye")
@@ -54,8 +53,13 @@ class GraspSequencePipeline:
         gripper_bbox: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]] = (
             (-0.05, 0.05),  # x
             (-0.05, 0.05),  # y
-            (-0.05, 0.2) # z
-        ),
+            (0.06, 0.2) # z
+        ),#empty
+        # gripper_bbox: Tuple[Tuple[float, float], Tuple[float, float], Tuple[float, float]] = (
+        #     (-0.4, 0.4),  # x
+        #     (-0.13, 0.13),  # y
+        #     (0.07, 0.2) # z
+        # ),#带钢筋
     ):
         logger.info("========== Init GraspSequencePipeline ==========")
 
@@ -96,7 +100,7 @@ class GraspSequencePipeline:
             raw_pose1_dir=session_dir / "raw" / "pose1",
             pcd_pose0_dir=session_dir / "pcd" / "pose0",
             pcd_pose1_dir=session_dir / "pcd" / "pose1",
-            fused_dir=session_dir / "fused",
+            fused_dir=session_dir / "grasp_pcd",
         )
 
         for d in [
@@ -203,11 +207,6 @@ class GraspSequencePipeline:
         ply_files_pose0 = list(self.paths.pcd_pose0_dir.rglob("*.ply"))
         ply_files_pose1 = list(self.paths.pcd_pose1_dir.rglob("*.ply"))
         
-        if not ply_files_pose0 or not ply_files_pose1:
-            logger.warning(f"[Step 6] No point cloud files found:\n  Pose0: {len(ply_files_pose0)}\n  Pose1: {len(ply_files_pose1)}")
-            fused_path = self.paths.fused_dir / "fused.ply"
-            fused_path.touch()
-            return fused_path
         
         ply1_path = ply_files_pose0[0]
         ply2_path = ply_files_pose1[0]
@@ -236,15 +235,11 @@ class GraspSequencePipeline:
             T_cam_ee2=T_cam_ee2,
             output_dir=str(self.paths.fused_dir),
         )
+
+
         
-        fused_files = list(self.paths.fused_dir.glob("*.ply"))
-        if fused_files:
-            fused_path = fused_files[0]
-        else:
-            fused_path = self.paths.fused_dir / "fused.ply"
-        
-        logger.success(f"[Step 6] Fused point cloud: {fused_path}")
-        return fused_path
+        logger.success(f"[Step 6] Fused point cloud: {self.paths.fused_dir}")
+        return self.paths.fused_dir
 
     def run(self) -> None:
         try:
@@ -276,7 +271,9 @@ def main():
     parser.add_argument(
         "--joints",
         type=str,
-        default="190.03,-74.53,-87.62,-106.24,94.64,306.18",
+        # default="190.03, -74.53, -87.62, -106.24, 94.64, 306.18",
+        # default="189.88, -52.24, -116.01, -57.75, 81.70, 319.40"  #空夹爪
+        default="324.46,-119.13,91.84,-304.96,76.45,359.69"
     )
     parser.add_argument(
         "--rotate_deg",
@@ -296,7 +293,7 @@ def main():
     parser.add_argument(
         "--session_root",
         type=str,
-        default="/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/run_sessions",
+        default="/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/run_sessions/grasp",
     )
     parser.add_argument(
         "--device",
