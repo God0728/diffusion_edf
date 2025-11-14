@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # filepath: /home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/tools/check_contect.py
-"""
-将抓取点云变换到目标位姿，并与场景点云拼接后可视化（保留原色）
-"""
 import argparse
 from pathlib import Path
 import torch

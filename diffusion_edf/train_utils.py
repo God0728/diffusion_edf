@@ -58,11 +58,10 @@ def get_collate_fn(task, proc_fn):
     return collate_fn
 
 def sample_reference_points(src_points: torch.Tensor, dst_points: torch.Tensor, r: float, n_samples: int = 1) -> Tuple[torch.Tensor, torch.Tensor]:
-    print(src_points.shape, dst_points.shape, "0000")
     edge_dst, edge_src = radius(x=src_points, y=dst_points, r=r)
-    print(edge_dst.shape, edge_src.shape,"1111")
+    #print(edge_dst.shape, edge_src.shape,"接触点索引数量")
     n_points = len(dst_points)
-    print(n_points, "抓取点云数量")
+    #print(n_points, "抓取点云数量")
     n_neighbor = scatter_sum(src=torch.ones_like(edge_dst), index=edge_dst, dim_size=n_points)
     total_count = n_neighbor.sum()
     if total_count <= 0:
@@ -85,13 +84,12 @@ def transform_and_sample_reference_points(T_target: torch.Tensor,
     if len(T_target) != 1:
         raise NotImplementedError
     dst_points = grasp_points.x
-    print(dst_points.shape, "1111")
+    #print(dst_points.shape, "graspinit")
     if xref_bbox is not None:
         inrange_idx = ((dst_points >= xref_bbox[:,0]) * (dst_points <= xref_bbox[:,1])).all(dim=-1).nonzero().squeeze()
         dst_points = dst_points.index_select(index=inrange_idx, dim=0)
     
-    print(scene_points.x.shape, "2222")
-    print(scene_points.f.shape, "3333")
+    #print(scene_points.x.shape, "scene")
     
     x_ref, n_neighbors = sample_reference_points(
         src_points = PointCloud(points=scene_points.x, colors=scene_points.f).transformed(
