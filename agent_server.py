@@ -105,11 +105,11 @@ if __name__ == '__main__':
             else:
                 setattr(self, name, value)
 
-        @expose
+        #@expose
         def reconfigure(self, name: str, value: Dict[str, Any]) -> bool:
             self._reconfigure(name=name, value=value)
 
-        @expose
+        #@expose
         def get_configs(self) -> Dict[str, Any]:
             output = {}
             for config_name in self.reconfigurable_configs:
@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
             return Ts, info
         
-        @expose
+        #@expose
         def denoise(self, scene_pcd: data.PointCloud, 
                      grasp_pcd: data.PointCloud,
                      current_poses: data.SE3,
@@ -223,7 +223,7 @@ if __name__ == '__main__':
             
             
         
-        @expose
+        #@expose
         def request_trajectories(self, scene_pcd: data.PointCloud, 
                                  grasp_pcd: data.PointCloud,
                                  current_poses: data.SE3,

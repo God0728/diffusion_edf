@@ -86,6 +86,7 @@ end
         try:
             # 四元数转旋转向量
             rotvec = R.from_quat(quaternion).as_rotvec()
+            print(f"目标旋转向量: {rotvec}")
             target_pose = list(position) + list(rotvec)
             
             ur_script = f"""

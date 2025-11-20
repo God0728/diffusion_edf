@@ -40,7 +40,7 @@ class EnvService():
         
         self.scene_config = {
             "camera_model_path": handeye_camera_model,
-            "cam2base_path": cam2ee_path,
+            "cam2ee_path": cam2ee_path,
             "session_root": f"{session_root}/scene",
             "device": scene_device,
             "scale": 1,
@@ -62,7 +62,7 @@ class EnvService():
         
         logger.success("✓ Environment Service 初始化完成!")
 
-    @expose
+    #@expose
     def get_current_poses(self) -> SE3:
         
         pos, quat = self.robot.get_current_pose()  # quat: [x,y,z,w]
@@ -75,7 +75,7 @@ class EnvService():
         logger.success(f"✓ 当前位姿: pos={pos}, quat={quat}")
         return current_pose
 
-    @expose
+    #@expose
     def observe_scene(
         self,
         target_joint_deg: Optional[List[float]] = None,
@@ -115,7 +115,7 @@ class EnvService():
         finally:
             pipeline._stop_camera()
 
-    @expose
+    #@expose
     def observe_grasp(
         self,
         target_joint_deg: Optional[List[float]] = None,
@@ -154,7 +154,7 @@ class EnvService():
         finally:
             pipeline._stop_camera()
 
-    @expose
+    #@expose
     def move_se3(
         self,
         target_poses: SE3,
