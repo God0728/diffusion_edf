@@ -24,7 +24,7 @@ def test_single_pose():
     # 从错误日志中提取的目标位姿
     target_pos = [-0.04940994083881378, 0.32348474860191345, 0.16627947986125946]
     target_quat_xyzw = [-0.24454217, 0.9668187, 0.040123098, -0.062055662]
-    
+
     print("=" * 60)
     print("🎯 目标位姿信息")
     print("=" * 60)
@@ -32,44 +32,6 @@ def test_single_pose():
     print(f"四元数 (x,y,z,w): {target_quat_xyzw}")
     print()
     
-    # 检查四元数归一化
-    quat_norm = np.linalg.norm(target_quat_xyzw)
-    print(f"📐 四元数模长: {quat_norm:.6f}")
-    if abs(quat_norm - 1.0) > 0.01:
-        print(f"⚠️  警告: 四元数未归一化! (应为1.0)")
-        target_quat_xyzw = (np.array(target_quat_xyzw) / quat_norm).tolist()
-        print(f"✓ 归一化后: {target_quat_xyzw}")
-    else:
-        print(f"✓ 四元数已归一化")
-    print()
-    
-    # 检查位置范围
-    print("📏 位置分析:")
-    print(f"  X: {target_pos[0]:.4f} m")
-    print(f"  Y: {target_pos[1]:.4f} m")
-    print(f"  Z: {target_pos[2]:.4f} m (高度)")
-    
-    if target_pos[2] < 0.10:
-        print(f"  ⚠️  Z 高度过低! 可能碰撞工作台")
-    elif target_pos[2] < 0.15:
-        print(f"  ⚠️  Z 高度偏低，需注意安全")
-    else:
-        print(f"  ✓ Z 高度合理")
-    print()
-    
-    # 计算到基座的距离
-    dist_xy = np.sqrt(target_pos[0]**2 + target_pos[1]**2)
-    dist_3d = np.sqrt(target_pos[0]**2 + target_pos[1]**2 + target_pos[2]**2)
-    print(f"📍 到基座距离:")
-    print(f"  XY 平面: {dist_xy:.4f} m")
-    print(f"  3D 空间: {dist_3d:.4f} m")
-    
-    # UR5e 工作半径约 850mm
-    if dist_xy > 0.85:
-        print(f"  ⚠️  超出 UR5e 工作半径 (850mm)!")
-    else:
-        print(f"  ✓ 在工作半径内")
-    print()
     
     # 连接机器人
     print("=" * 60)

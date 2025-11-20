@@ -89,13 +89,18 @@ end
             print(f"目标旋转向量: {rotvec}")
             target_pose = list(position) + list(rotvec)
             
-            ur_script = f"""
-            def remote_move():
-    target = p{target_pose}
-    movel(target, a={acceleration}, v={velocity})
+            # 解包位姿参数
+            x, y, z, rx, ry, rz = target_pose
+            
+            ur_script = f"""def remote_move():
+  target_pose = p[{x}, {y}, {z}, {rx}, {ry}, {rz}]
+  target_joint = get_inverse_kin(target_pose)
+  movej(target_joint, a={acceleration}, v={velocity})
 end
 remote_move()
-            """
+"""
+            print("将发送的脚本：")
+            print(ur_script)
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(8)
                 s.connect((self.robot_ip, self.port))

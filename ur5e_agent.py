@@ -167,7 +167,10 @@ def main() -> None:
     args = parse_args()
 
     env_service = EnvService()
-
+    agent_pipeline = LocalAgentPipeline(
+        configs_root=args.configs_root_dir,
+        compile_score_head=args.compile_score_model_head,
+    )
 
     def acquire_pointclouds() -> Tuple[data.PointCloud, data.PointCloud]:
         scene = env_service.observe_scene()
@@ -175,10 +178,7 @@ def main() -> None:
         return scene, grasp
 
     scene_pcd, grasp_pcd = acquire_pointclouds()
-    agent_pipeline = LocalAgentPipeline(
-        configs_root=args.configs_root_dir,
-        compile_score_head=args.compile_score_model_head,
-    )
+
     for task in ("pick",):
         current_pose = env_service.get_current_poses()
         # if task == "place" :
