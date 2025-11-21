@@ -9,7 +9,7 @@ pick_diffusion_configs:
   time_exponent_alpha: 0.5
   log_t_schedule: True
 pick_trajectory_configs:
-  approach_len: 0.1
+  approach_len: 0.2
   n_steps: 10
 place_diffusion_configs:
   N_steps_list: [[200, 200], [200, 200, 100]]

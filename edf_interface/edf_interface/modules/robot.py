@@ -52,6 +52,8 @@ class RobotInterface:
         joint_rad: List[float],
         velocity: float = 0.2,
         acceleration: float = 1.0,
+        wait: bool = True,
+        delay: float = 6.0
     ) -> bool:
             ur_script = f"""def remote_move():
   target_joint = {joint_rad}
@@ -73,6 +75,8 @@ end
                     print("机器人响应:", resp.decode(errors="ignore"))
                 except socket.timeout:
                     print("控制器未返回（通常也算正常）")
+            if wait:
+                time.sleep(delay)
     
     def move_to_pose(
         self,
@@ -81,19 +85,17 @@ end
         velocity: float = 0.2,
         acceleration: float = 1.0,
         wait: bool = True,
-        timeout: float = 10.0
+        timeout: float = 15.0
     ) -> bool:
         try:
-            # 四元数转旋转向量
             rotvec = R.from_quat(quaternion).as_rotvec()
             print(f"目标旋转向量: {rotvec}")
             target_pose = list(position) + list(rotvec)
             
-            # 解包位姿参数
             x, y, z, rx, ry, rz = target_pose
             
             ur_script = f"""def remote_move():
-  target_pose = p[{x}, {y}, {z}, {rx}, {ry}, {rz}]
+  target_pose = p[{x}, {y}, {z}, {rx}, {ry}, {0}]
   target_joint = get_inverse_kin(target_pose)
   movej(target_joint, a={acceleration}, v={velocity})
 end
@@ -112,6 +114,8 @@ remote_move()
                     print("机器人响应:", resp.decode(errors="ignore"))
                 except socket.timeout:
                     print("控制器未返回（通常也算正常）")
+            if wait:
+                time.sleep(timeout)
             
         except Exception as e:
             print(f"❌ 运动失败: {e}")

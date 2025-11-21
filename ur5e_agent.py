@@ -1,5 +1,8 @@
 from __future__ import annotations
+import multiprocessing as mp
 
+AUTHKEY = b"diff_edf_secret"
+mp.current_process().authkey = AUTHKEY
 import argparse
 import sys
 from pathlib import Path
@@ -17,18 +20,15 @@ for candidate in (EDF_INTERFACE_DIR, EXAMPLES_DIR):
 
 import torch
 import yaml
-
+import math
 from edf_interface import data
-try:
-    from edf_interface.examples.env_server import EnvService
-except ModuleNotFoundError:
-    from env_server import EnvService
+from env_server import EnvService
 from edf_interface.utils.manipulation_utils import (
     compute_pre_pick_trajectories,
     compute_pre_place_trajectories,
 )
 from diffusion_edf.agent import DiffusionEdfAgent
-
+from local_client import ModelClient
 
 class LocalAgentPipeline:
     """Wraps pick/place Diffusion-EDF agents for direct invocation."""
@@ -147,42 +147,57 @@ def execute_trajectory(
     wait: bool,
 ) -> None:
     """Stream each pose in ``trajectory`` to the real robot."""
-
-    pose = trajectory.poses[-1:]
-    single_step = data.SE3(poses=pose) 
-    env.move_se3(single_step, velocity=velocity, acceleration=acceleration, wait=wait)
+    num_waypoints = trajectory.poses.shape[0]
+    print(f"开始执行轨迹，共 {num_waypoints} 个路径点")
+    
+    for i in range(num_waypoints):
+        pose = trajectory.poses[i:i+1]  
+        single_step = data.SE3(poses=pose)
+        
+        print(f"  执行路径点 [{i+1}/{num_waypoints}]")
+        success=env.move_se3(single_step, velocity=velocity, acceleration=acceleration, wait=wait)
+        if not success:
+            print(f"⚠️ 路径点 [{i+1}] 执行失败")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run pick/place locally without Pyro")
+    parser = argparse.ArgumentParser(description="Run pick/place locally")
     parser.add_argument("--configs-root-dir", type=Path, required=True, help="Path to task config folder (e.g. configs/panda_bottle)")
     parser.add_argument("--compile-score-model-head", action="store_true", help="JIT compile score head for faster inference")
     parser.add_argument("--move-velocity", type=float, default=0.2, help="Joint move velocity")
     parser.add_argument("--move-acceleration", type=float, default=1.0, help="Joint move acceleration")
-    parser.add_argument("--no-wait", action="store_true", help="Do not block between intermediate moves")
+    parser.add_argument("--use-server", action="store_true")  
+    parser.add_argument("--model-socket", type=str, default="/tmp/diff_edf_model.sock")  
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-
     env_service = EnvService()
-    agent_pipeline = LocalAgentPipeline(
-        configs_root=args.configs_root_dir,
-        compile_score_head=args.compile_score_model_head,
-    )
+    if args.use_server:
+        agent_pipeline = ModelClient(socket_path=args.model_socket)
+    else:
+        agent_pipeline = LocalAgentPipeline(
+            configs_root=args.configs_root_dir,
+            compile_score_head=args.compile_score_model_head,
+        )
 
-    def acquire_pointclouds() -> Tuple[data.PointCloud, data.PointCloud]:
-        scene = env_service.observe_scene()
-        grasp = env_service.observe_grasp()
-        return scene, grasp
+    # def acquire_pointclouds() -> Tuple[data.PointCloud, data.PointCloud]:
+    #     scene = env_service.observe_scene()
+    #     grasp = env_service.observe_grasp()
+    #     return scene, grasp
 
-    scene_pcd, grasp_pcd = acquire_pointclouds()
-
-    for task in ("pick",):
+    # scene_pcd, grasp_pcd = acquire_pointclouds()
+    scene_pcd = env_service.observe_scene()
+    grasp_pcd = data.PointCloud.load(str("/home/hkcrc/diffusion_edfs/diffusion_edf/edf_interface/run_sessions/grasp/20251113_154123/grasp_pcd"))
+    target_joint_deg= [251.26, -73.91, 39.62, -239.84, 87.47, 191.20]
+    target_joint_rad = [math.radians(j) for j in target_joint_deg]
+    
+    env_service.robot.move_to_joint_rad(joint_rad=target_joint_rad, wait=True,delay=12.0) 
+    for task in ("pick","place"):
         current_pose = env_service.get_current_poses()
-        # if task == "place" :
-        #     scene_pcd, grasp_pcd = acquire_pointclouds()
+        if task == "place" :
+            grasp_pcd = env_service.observe_grasp()
 
         trajectories, info = agent_pipeline.request_trajectories(
             scene_pcd=scene_pcd,
@@ -196,12 +211,14 @@ def main() -> None:
             raise RuntimeError(f"Agent returned zero trajectories for task '{task}'.")
 
         primary_traj = trajectories[0]
+        print(primary_traj.poses.shape)
+        print(primary_traj.poses,"目标点")
         execute_trajectory(
             env=env_service,
             trajectory=primary_traj,
             velocity=args.move_velocity,
             acceleration=args.move_acceleration,
-            wait=not args.no_wait,
+            wait=True
         )
 
         print(f"[{task}] executed {primary_traj.poses.shape[0]} waypoints | info keys: {list(info.keys())}")
